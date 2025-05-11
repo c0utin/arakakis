@@ -1,0 +1,44 @@
+name: Zig CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Zig
+        uses: MLugg/setup-zig@v1
+        with:
+          version: "0.14.0" 
+
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/zig
+            ~/.local/share/zig
+            deps/  # If using zig-deps directory
+          key: ${{ runner.os }}-zig-${{ hashFiles('build.zig', 'build.zig.zon') }}
+
+      - name: Build dependencies
+        run: zig build 
+
+      - name: Run tests
+        run: zig build test
+
+      - name: Save cache
+        if: always()
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            ~/.cache/zig
+            ~/.local/share/zig
+            deps/  # If using zig-deps directory
+          key: ${{ steps.restore-cache.outputs.cache-primary-key }}
